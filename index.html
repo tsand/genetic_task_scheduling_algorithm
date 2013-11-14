@@ -32,21 +32,21 @@
 
 <h4>Project Description</h4>
 
-<p>Our project idea is to develop a genetic algorithm for task selection/scheduling. A general
+<p>Our project idea is to develop a genetic algorithm for task scheduling. A general
     overview is that we would like to make a genetic algorithm that can take a large set of tasks,
-    some constraints, a set of resources, and outputs a subset of the given tasks (as a sequence)
-    that meets the constraints and efficiently utilizes the resources. One possible use case for
-    this is as a scheduler for a group of servers pulling tasks from a task pool.</p>
+    some constraints, a number of resources to run the tasks on, and outputs a schedule for 
+	running the tasks on the resources that efficiently uses time and resources while not violating
+	any hard constraints. One possible use case for this is as a scheduler for a group of servers 
+	pulling tasks from a task pool.</p>
 
-<p>A more concrete description is that each task could have a duration (amount of time it takes), an
-    amount of resources it uses (think of it as cost), a priority value (think of it as reward for
-    doing the task), and a set of prerequisite tasks that must be completed before this task can be
-    performed. The input is a set of these tasks and the amount of time and resources available to
-    perform the tasks. The output is a subset of the given tasks that efficiently uses the time and
-    resources while not going over or violating prerequisite requirements. Additionally, users could
-    set a number of generations they want the algorithm to run for (a larger number of generations
-    yields a better result). The tricky part of this project will be developing a fitness function
-    that can accurately determine the efficiency of a given schedule.
+<p>A more concrete description is that each task could have a duration (amount of time it takes to
+	execute), a priority value, and a set of prerequisite tasks (dependencies) that must be 
+	completed before this task can be executed. The input is a set of these tasks and the number of
+	resources available to execute the tasks. The output is a list of resources and the order in
+	which tasks are run on each resource. Additionally, users could set a number of generations 
+	they want the algorithm to run for (a larger number of generations yields a better result). 
+	The tricky part of this project will be developing a genome representation of a schedule and 
+	a fitness function that can accurately determine the efficiency of a given genome/schedule.
 
 <p>
 
@@ -69,35 +69,47 @@
 <h4>Approach</h4>
 <h5>Algorithm</h5>
 <ul>
-    <li>Inputs = Tasks + Contraints + Algorithm Inputs(total generations)
+    <li>Inputs - The tasks to schedule, contraints on the possible schedules, and algorithm
+		specific inputs such as max generations, timeout, and/or seed.
     </li>
     <li>Constraints
         <ul>
             <li>Hard
                 <ul>
-                    <li>Procedural - the dependecies each task has on other tasks
+                    <li>Procedural - The dependecies each task has on other tasks. If task T1
+					is dependent on task T2, then this constraint prevents T1 from being 
+					sechduled before T2 is complete. 
                     </li>
-                    <li>Temporal - any time constraints put on each task
+                    <li>Temporal - The time constraints put on each task, such as task T1 must
+					be completed before time 10.
                     </li>
-                    <li>Resource - The number of processors that can run tasks
+                    <li>Resource - Analogous to the number of processors available to run tasks.
+					If there are X resources/processors available then up to X tasks can be
+					executing at any time.
                     </li>
                 </ul>
             </li>
             <li>Soft
                 <ul>
-                    <li>Total Time constraint - the time it takes for the longest running
-                        processor
+                    <li>Total Time - The time it takes for the longest running processor
+					to finish executing tasks.
                     </li>
-                    <li>Throughput - the sum of all the end times of each task</li>
+                    <li>Prioritized Throughput - The sum of all the end times of each task, 
+					weighted by their priority.</li>
                 </ul>
             </li>
         </ul>
     </li>
-    <li>Solution/Genome - a solution will be represented by a list of processors and the order in
-        which
-        tasks run on each processor.
+    <li>Solution/Genome - A solution will be represented by a list of resources and the order in
+        which tasks run on each resource.
     </li>
-    <li>Fitness function
+	<li>Reproduction - Creating new solutions from two old solutions by randomly choosing a 
+	crossover index and swapping the tasks after that index in each resource of one solution with
+	the tasks after that index in each resource of the other solution.
+    </li>
+    <li>Fitness Function - A generationally applied function that "sterilizes" solutions that
+	violate any hard constraints and rewards solutions that measure well in terms of the soft
+	constraints with a chance to reproduce.
     </li>
 </ul>
 
@@ -120,7 +132,7 @@
 <h4>Anticipated Results</h4>
 
 <p>We expect that upon completion of our project, we will be able to consistentantly, effectively,
-    and efficiently generate a task schedule using a genetic algorithm</p>
+    and efficiently generate a task schedule using a genetic algorithm.</p>
 
 <h4>Sources</h4>
 <ul>
