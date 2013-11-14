@@ -6,15 +6,22 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<script>
-	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-	  ga('create', 'UA-33670860-7', 'theisensanders.com');
-	  ga('send', 'pageview');
-	</script>
+        ga('create', 'UA-33670860-7', 'theisensanders.com');
+        ga('send', 'pageview');
+    </script>
 </head>
 <body>
 <h1>A Genetic Algorithm for Task Scheduling</h1>
@@ -51,12 +58,79 @@
 </p>
 
 <h4>Goals</h4>
+<ul>
+    <li>To develop an efficient algorithm for determining an optimized task schedule</li>
+    <li>To create a web application that provides simple inputs for tasks and constraints, and
+        outputs the resulting schedule
+    </li>
+    <li>Provides a mechanism for helping users understand how the genetic algorithm operates</li>
+</ul>
 
 <h4>Approach</h4>
+<h5>Algorithm</h5>
+<ul>
+    <li>Inputs = Tasks + Contraints + Algorithm Inputs(total generations)
+    </li>
+    <li>Constraints
+        <ul>
+            <li>Hard
+                <ul>
+                    <li>Procedural - the dependecies each task has on other tasks
+                    </li>
+                    <li>Temporal - any time constraints put on each task
+                    </li>
+                    <li>Resource - The number of processors that can run tasks
+                    </li>
+                </ul>
+            </li>
+            <li>Soft
+                <ul>
+                    <li>Total Time constraint - the time it takes for the longest running
+                        processor
+                    </li>
+                    <li>Throughput - the sum of all the end times of each task</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+    <li>Solution/Genome - a solution will be represented by a list of processors and the order in
+        which
+        tasks run on each processor.
+    </li>
+    <li>Fitness function
+    </li>
+</ul>
 
-<h4>Results</h4>
+<h5>Tools</h5>
+
+<ul>
+    <li>Genetic Algorithm
+        <ul>
+            <li>Python</li>
+        </ul>
+    </li>
+    <li>Web Framework for input/output
+        <ul>
+            <li>Python</li>
+            <li>HTML/CSS/JavaScript</li>
+        </ul>
+    </li>
+</ul>
+
+<h4>Anticipated Results</h4>
+
+<p>We expect that upon completion of our project, we will be able to consistentantly, effectively,
+    and efficiently generate a task schedule using a genetic algorithm</p>
 
 <h4>Sources</h4>
+<ul>
+    <li>
+        <a href="http://www.cscjournals.org/csc/manuscript/Journals/IJCSS/volume4/Issue2/IJCSS-269.pdf">Heuristics
+            Based Genetic Algorithm for Scheduling Static Tasks in Homogeneous Parallel System</a>
+    </li>
+    <li><a href="http://en.wikipedia.org/wiki/Genetic_algorithm_scheduling">Genetic algorithm
+        scheduling</a></li>
+</ul>
 
 </body>
 </html>
