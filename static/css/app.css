@@ -1,11 +1,11 @@
-.thick {
-    font-weight: bolder;
+#task-input-container {
+    margin: 20px 0;
 }
 
-a {
-    font-size: 28px;
+.task-input {
+    margin-top: 10px;
 }
 
-p {
-    margin-top: 15px;
+#schedule {
+    margin: 50px 0;
 }
