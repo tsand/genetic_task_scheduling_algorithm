@@ -2,12 +2,13 @@ app = angular.module('genAlg', []);
 
 function AppController($scope, $http) {
     $scope.constraints = {
-        processors: 3,
-        total_time: 10
+        processors: 4,
+        total_time: 10,
+        generations: 100
     };
 
     $scope.tasks = [
-        {id: 1, name: 'Task 1', length: 1, depend: null, timeConstraint: 0}
+        {id: 1, name: 'Task 1', length: 1, depend: null, timeConstraint: 0, priority: 1}
     ];
 
     $scope.addTask = function () {
@@ -17,6 +18,7 @@ function AppController($scope, $http) {
         task['id'] = ($scope.tasks.length + 1);
         task['timeConstraint'] = 0;
         task['length'] = 1;
+        task['priority'] = 1;
         $scope.tasks.push(task);
     };
 
@@ -73,6 +75,10 @@ function AppController($scope, $http) {
     };
 
     $scope.generateSchedule = function () {
+        var btn = $('#generate-schedule');
+        var text = btn.text();
+        btn.text('Generating...');
+
         var data = {
             tasks: $scope.tasks,
             constraints: $scope.constraints
@@ -85,6 +91,7 @@ function AppController($scope, $http) {
             data: data
         }).success(function (data, status, headers, config) {
                 $scope.schedule = data;
+                btn.text(text);
             });
     }
 }

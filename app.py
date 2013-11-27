@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import json
+from time import sleep
 
 app = Flask(__name__)
 
@@ -43,6 +44,7 @@ def schedule():
     schedule[1][5] = {'name': 'test', 'color': '#8e44ad'}
     schedule[1][6] = {'name': 'test', 'color': '#8e44ad'}
 
+    sleep(1)
 
     return json.dumps(schedule)
 

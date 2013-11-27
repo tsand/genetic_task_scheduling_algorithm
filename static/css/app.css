@@ -1,3 +1,35 @@
+html, body {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+}
+
+#header {
+    margin-top: 0;
+    width: 100%;
+    background-color: #3498db;
+    padding: 50px 0 40px 60px;
+}
+
+#header h1 {
+    color: #FFFFFF;
+    font-size: 40px;
+}
+
+#header h4 {
+    color: #FFFFFF;
+}
+
+#header h4 a {
+    color: #FFFFFF;
+}
+
+#header .btn {
+    text-decoration: none;
+    background-color: #FFFFFF;
+    color: inherit;
+}
+
 #task-input-container {
     margin: 20px 0;
 }
@@ -7,5 +39,24 @@
 }
 
 #schedule {
-    margin: 50px 0;
+
+}
+
+.container {
+    margin-top: 100px;
+    padding: 0;
+}
+
+.btn-primary {
+    background-color: #3498db;
+}
+
+.processor-label {
+    width: 35px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.time-label {
+    text-align: center;
 }
