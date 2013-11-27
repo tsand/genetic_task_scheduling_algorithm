@@ -1,25 +1,25 @@
 app = angular.module('genAlg', []);
 
-function AppController($scope) {
-    $scope.processors = 3;
+function AppController($scope, $http) {
+    $scope.constraints = {
+        processors: 3,
+        total_time: 10
+    };
 
-    $scope.taskCount = 1;
     $scope.tasks = [
         {id: 1, name: 'Task 1', length: 1, depend: null, timeConstraint: 0}
     ];
-    $scope.updateTasks = function () {
-        if ($scope.taskCount > $scope.tasks.length) {
-            var task = {};
-            task['name'] = 'Task ' + $scope.taskCount;
-            task['depend'] = null;
-            task['id'] = $scope.taskCount;
-            task['timeConstraint'] = 0;
-            task['length'] = 1;
-            $scope.tasks.push(task);
-        } else if ($scope.taskCount < $scope.tasks.length) {
-            $scope.tasks.pop();
-        }
+
+    $scope.addTask = function () {
+        var task = {};
+        task['name'] = 'Task ' + ($scope.tasks.length + 1);
+        task['depend'] = null;
+        task['id'] = ($scope.tasks.length + 1);
+        task['timeConstraint'] = 0;
+        task['length'] = 1;
+        $scope.tasks.push(task);
     };
+
     $scope.setDependency = function (task, depend) {
         task.depend = depend;
     };
@@ -39,71 +39,55 @@ function AppController($scope) {
         return new Array(n);
     };
 
-    $scope.taskIDs = [1, 2, 3];
+    $scope.schedule = [];
 
-    $scope.schedule = [
-        [
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {}
-        ],
-        [
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {}
-        ],
-        [
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {}
-        ]
-    ];
+    var initSchedule = function () {
+        for (var i = 0; i < $scope.constraints.processors; i++) {
+            p = [];
+            for (var j = 0; j < $scope.constraints.total_time; j++) {
+                p.push({});
+            }
+            $scope.schedule.push(p);
+        }
+    };
+    initSchedule();
 
-    $scope.getTasks = function (processor) {
-        var schedule = {};
-        for (var i = 0; i < $scope.processors; i++) {
-            schedule[i] = {};
-            for (var j = 0; j < 10; j++) {
-                schedule[i][j] = {}
+    $scope.updateSchedule = function () {
+        if ($scope.constraints.processors > $scope.schedule.length) {
+            p = [];
+            for (var i = 0; i < $scope.constraints.total_time; i++) {
+                p.push({});
+            }
+            $scope.schedule.push(p);
+        } else if ($scope.constraints.processors < $scope.schedule.length) {
+            $scope.schedule.pop();
+        } else if ($scope.constraints.total_time > $scope.schedule[0].length) {
+            for (var i = 0; i < $scope.schedule.length; i++) {
+                $scope.schedule[i].push({});
+            }
+        } else if ($scope.constraints.total_time < $scope.schedule[0].length) {
+            for (var i = 0; i < $scope.schedule.length; i++) {
+                $scope.schedule[i].pop();
             }
         }
+    };
 
-        var schedule = {};
-        console.log($scope.tasks.length);
-        for (var i = 0; i < $scope.tasks.length; i++) {
-            var task = $scope.tasks[i];
-            console.log(task.processor == processor);
-            if (task.processor == processor) {
-                var start = task.start;
-                var length = task.length;
-                for (var j = start; j < start + length; j++) {
-                    schedule[j] = 'test';
-                }
-            }
-        }
+    $scope.generateSchedule = function () {
+        var data = {
+            tasks: $scope.tasks,
+            constraints: $scope.constraints
+        };
 
-        console.log(schedule)
-        return schedule;
+        $http({
+            url: '/schedule',
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: data
+        }).success(function (data, status, headers, config) {
+                $scope.schedule = data;
+            });
     }
 }
+
+AppController.$inject = ['$scope', '$http'];
+

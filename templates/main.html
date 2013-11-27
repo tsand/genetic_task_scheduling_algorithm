@@ -16,11 +16,12 @@
 
     <div class="row" id="header">
         <div class="col-lg-4">
-            Processors: <input class="form-control" type="number" min="1" ng-model="processors">
+            Processors:
+            <input class="form-control" type="number" min="1" ng-model="constraints.processors" ng-change="updateSchedule()">
         </div>
         <div class="col-lg-4">
-            Tasks:
-            <input class="form-control" type="number" min="1" ng-model="taskCount" ng-change="updateTasks()">
+            Total Time:
+            <input class="form-control" type="number" min="1" ng-model="constraints.total_time" ng-change="updateSchedule()">
         </div>
     </div>
 
@@ -29,7 +30,7 @@
             <div class="col-lg-2"><h5>Name</h5></div>
             <div class="col-lg-1"><h5>Length</h5></div>
             <div class="col-lg-1"><h5>Time Constraint</h5></div>
-            <div class="col-lg-8"><h5>Task Dependency</h5></div>
+            <div class="col-lg-2"><h5>Task Dependency</h5></div>
         </div>
         <div ng-repeat="task in tasks" class="row task-input">
             <div class="col-lg-2">
@@ -41,7 +42,7 @@
             <div class="col-lg-1">
                 <input type="number" class="form-control" ng-model="task.timeConstraint">
             </div>
-            <div class="col-lg-8">
+            <div class="col-lg-2">
                 <div class="btn-group">
                     <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" ng-disabled="tasks.length < 2">
                         {{ getDependency(task).name }} <span class="caret"></span>
@@ -50,15 +51,21 @@
                         <li ng-click="setDependency(task, null)" ng-show="task.depend"><a href="#">None</a>
                         </li>
                         <li class="divider" ng-show="task.depend"></li>
-                        <li ng-repeat="depend in tasks" ng-hide="task.depend == depend.id || task.id == depend.id" ng-click="setDependency(task, depend.id)">
+                        <li ng-repeat="depend in tasks" ng-hide="task.depend == depend.id || task.id == depend.id || depend.depend == task.id" ng-click="setDependency(task, depend.id)">
                             <a href="#" ng-bind="depend.name"></a></li>
                     </ul>
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-lg-5">
+                <br>
+                <button class="btn pull-right" ng-click="addTask()">Add Task</button>
+            </div>
+        </div>
     </div>
 
-    <div class="row" id="schedule" style="display: none;">
+    <div class="row" id="schedule">
         <table class="table table-bordered">
             <thead>
             <tr>
@@ -68,13 +75,15 @@
             </thead>
             <tr ng-repeat="processor in schedule">
                 <td ng-bind="$index + 1"></td>
-                <td ng-repeat="task in processor">{{ task.name }}</td>
+                <td ng-repeat="task in processor" style="background-color: {{ task.color }}"></td>
             </tr>
         </table>
     </div>
 
-    <div class="row" style="display: none">
-        <button class="btn btn-primary btn-large pull-right">Generate Schedule</button>
+    <div class="row">
+        <button class="btn btn-primary btn-large pull-right" ng-click="generateSchedule()">Generate
+            Schedule
+        </button>
     </div>
 </div>
 
@@ -85,7 +94,6 @@
 <script src="../static/js/app.js"></script>
 
 <script>
-
 
 
 </script>
