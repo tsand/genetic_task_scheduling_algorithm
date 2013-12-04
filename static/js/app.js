@@ -8,7 +8,7 @@ function AppController($scope, $http) {
     };
 
     $scope.tasks = [
-        {id: 1, name: 'Task 1', length: 1, depend: null, timeConstraint: 0, priority: 1}
+        {id: 1, name: 'Task 1', length: 1, depend: null, priority: 1}
     ];
 
     $scope.addTask = function () {
@@ -16,7 +16,6 @@ function AppController($scope, $http) {
         task['name'] = 'Task ' + ($scope.tasks.length + 1);
         task['depend'] = null;
         task['id'] = ($scope.tasks.length + 1);
-        task['timeConstraint'] = 0;
         task['length'] = 1;
         task['priority'] = 1;
         $scope.tasks.push(task);
