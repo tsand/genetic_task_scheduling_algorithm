@@ -2,6 +2,8 @@ from flask import Flask, render_template, request
 import json
 from time import sleep
 
+import genetic_algorithm
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -12,8 +14,19 @@ def main():
 def schedule():
     data = request.json
 
-    tasks = data.get('tasks')
+    raw_tasks = data.get('tasks')
+    tasks = []
+    for task in raw_tasks:
+        t = genetic_algorithm.Task(task.get('id'), task.get('name'), task.get('length'), task.get('priority'), task.get('depend'))
+        tasks.append(t)
+
     constraints = data.get('constraints')
+    processors = constraints.get('processors')
+    generations = constraints.get('generations')
+
+    gen_alg = genetic_algorithm.GeneticTaskScheduler(tasks)
+    print gen_alg.schedule_tasks(processors, generations)
+
 
     # This is where we will take the post and format it in a way that the algorithm will accept
     # Then it will be pased through the algorithm and return the results of the algorithm
