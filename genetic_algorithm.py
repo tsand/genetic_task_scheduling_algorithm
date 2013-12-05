@@ -12,7 +12,7 @@ import random
 #  Constants
 ###############
 
-POPULATION_SIZE = 20
+POPULATION_SIZE = 10
 
 REPRODUCE_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.1
@@ -36,6 +36,9 @@ class Task:
         self.priority = priority
         self.dependencies = dependencies
         self.min_completion_time = -1
+
+    def is_dependency_of(self, other):
+        return (self in other.dependencies) or any(self.is_dependency_of(task) for task in other.dependencies)
 
     def get_min_completion_time(self):
         if self.min_completion_time < 0:
@@ -89,7 +92,7 @@ class Schedule:
         if task in results:
             return results[task.identifier]
 
-        previous_task_completion = 0 if task_index == 0 else self.calculate_task_completion(results,
+        previous_task_completion = 0 if task_index <= 0 else self.calculate_task_completion(results,
                                                                                             processor_index,
                                                                                             task_index - 1)
         dependency_completions = []
@@ -127,7 +130,7 @@ class Schedule:
         """
         max_crossover_index = min(self.min_processor_schedule_length(),
                                   other.min_processor_schedule_length())
-        crossover_index = random.randrange(0, max_crossover_index)
+        crossover_index = random.randrange(0, max_crossover_index + 1)
 
         child1 = self.clone()
         for i, processor in enumerate(child1.processor_schedules):
@@ -143,18 +146,23 @@ class Schedule:
         """
         Chooses 1 task and moves it to a random index schedule
         """
-        from_processor = random.choice(self.processor_schedules)
+        from_processor = random.choice([processor for processor in self.processor_schedules if len(processor)])
         to_processor = random.choice(self.processor_schedules)
 
         from_task = random.choice(from_processor)
         from_processor.remove(from_task)
 
-        min_to_index = 0
+        min_to_index = -1
         for i in range(len(to_processor)):
-            if to_processor[i] in from_task.dependencies:
+            if to_processor[i].is_dependency_of(from_task):
                 min_to_index = i
 
-        to_processor.insert(random.randrange(min_to_index + 1, len(to_processor) + 1), from_task)
+        max_to_index = len(to_processor)
+        for i in reversed(range(len(to_processor))):
+            if from_task.is_dependency_of(to_processor[i]):
+                max_to_index = i
+
+        to_processor.insert(random.randrange(min_to_index + 1, max_to_index + 1), from_task)
 
 
 class GeneticTaskScheduler:
@@ -171,7 +179,7 @@ class GeneticTaskScheduler:
 
         # Generate first schedule based on min completion time
         self.tasks.sort(None, lambda task: task.get_min_completion_time())
-        processor_schedules = [[]] * num_processors
+        processor_schedules = [[] for i in range(num_processors)]
 
         for i in range(len(self.tasks)):
             processor_schedules[i % num_processors].append(self.tasks[i])
@@ -203,7 +211,7 @@ class GeneticTaskScheduler:
 
         random.shuffle(fertile_list)
         for i in range(0, len(fertile_list) - 1, 2):
-            population.append(fertile_list[i].reproduce(fertile_list[i + 1]))
+            population += fertile_list[i].reproduce(fertile_list[i + 1])
 
     def mutate(self, population):
         """
@@ -224,7 +232,6 @@ class GeneticTaskScheduler:
                 fitness_list.append(None)
 
             task_completions = schedule.calculate_task_completion_map()
-            print task_completions
 
             makespan = max(task_completions.values())
 
@@ -234,7 +241,7 @@ class GeneticTaskScheduler:
                 value = task_completions[key]
                 flowtime += task.priority * value
 
-            fitness_value = TOTAL_TIME_WEIGHT * makespan + PRIORITIZED_THROUGHPUT_WEIGHT * flowtime
+            fitness_value = round(TOTAL_TIME_WEIGHT * makespan + PRIORITIZED_THROUGHPUT_WEIGHT * flowtime)
             fitness_list.append(fitness_value)
 
         return fitness_list
