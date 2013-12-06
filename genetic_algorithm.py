@@ -18,7 +18,7 @@ REPRODUCE_PROBABILITY = 0.5
 MUTATION_PROBABILITY = 0.1
 
 TOTAL_TIME_WEIGHT = 0.8
-PRIORITIZED_THROUGHPUT_WEIGHT = 0.2
+PRIORITY_FLOWTIME_WEIGHT = 0.2
 
 ###############
 #   Classes
@@ -57,6 +57,7 @@ class Schedule:
         if not processor_schedules:
             processor_schedules = []
         self.processor_schedules = processor_schedules
+        self.task_completion_map = {}
 
     def min_processor_schedule_length(self):
         """
@@ -83,40 +84,50 @@ class Schedule:
                     return i, j
         return None
 
-    def calculate_task_completion(self, results, processor_index, task_index):
+    def calculate_task_completion(self, processor_index, task_index):
         """
         Recursively determines when a task completes
         """
         task = self.processor_schedules[processor_index][task_index]
 
-        if task in results:
-            return results[task.identifier]
+        if task in self.task_completion_map:
+            return self.task_completion_map[task.identifier]
 
-        previous_task_completion = 0 if task_index <= 0 else self.calculate_task_completion(results,
-                                                                                            processor_index,
+        previous_task_completion = 0 if task_index <= 0 else self.calculate_task_completion(processor_index,
                                                                                             task_index - 1)
         dependency_completions = []
         for dependency in task.dependencies:
-            if dependency in results:
-                dependency_completions.append(results[dependency])
+            if dependency in self.task_completion_map:
+                dependency_completions.append(self.task_completion_map[dependency])
             else:
                 location = self.get_task_location(dependency)
                 dependency_completions.append(
-                    self.calculate_task_completion(results, location[0], location[1]))
+                    self.calculate_task_completion(location[0], location[1]))
 
-        results[task.identifier] = max(previous_task_completion,
-                               max(dependency_completions + [0])) + task.duration
-        return results[task.identifier]
+        self.task_completion_map[task.identifier] = max(previous_task_completion,
+                                                        max(dependency_completions + [0])) + task.duration
+        return self.task_completion_map[task.identifier]
 
-    def calculate_task_completion_map(self):
+    def get_task_completion_map(self):
         """
         For each task determine when it completes
         """
-        results = {}
         for i in range(len(self.processor_schedules)):
             for j in range(len(self.processor_schedules[i])):
-                self.calculate_task_completion(results, i, j)
-        return results
+                self.calculate_task_completion(i, j)
+        return self.task_completion_map
+
+    def calculate_time_grid(self, total_time):
+        """
+        Calculates the grid of time slots and which task's executing during each
+        """
+        time_grid = [[0 for x in range(total_time)] for y in range(len(self.processor_schedules))]
+        for i, processor in enumerate(self.processor_schedules):
+            for j, task in enumerate(processor):
+                end_time = self.calculate_task_completion(i, j)
+                time_grid[i][(end_time - task.duration):end_time] = [task.identifier] * task.duration
+
+        return time_grid
 
     def clone(self):
         """
@@ -169,6 +180,8 @@ class GeneticTaskScheduler:
     def __init__(self, tasks):
         self.tasks = tasks
         self.total_time = 0
+        self.total_time_bound = 0
+        self.priority_flowtime_bound = 0
 
     def initialize(self, num_processors, population_size, total_time):
         """
@@ -176,6 +189,22 @@ class GeneticTaskScheduler:
         produce an initial population.
         """
         self.total_time = total_time
+
+        # Calculate upper bounds for fitness measures
+        time_sum = 0
+        prioritized_tasks = list(self.tasks)
+
+        prioritized_tasks.sort(None, lambda task: task.priority)
+        for task in prioritized_tasks:
+            if time_sum + task.duration > total_time:
+                time_sum = 0
+                self.total_time_bound = total_time
+            else:
+                time_sum += task.duration
+            self.priority_flowtime_bound += time_sum + (task.duration * task.priority)
+
+        if not self.total_time_bound:
+            self.total_time_bound = time_sum
 
         # Generate first schedule based on min completion time
         self.tasks.sort(None, lambda task: task.get_min_completion_time())
@@ -231,17 +260,18 @@ class GeneticTaskScheduler:
             if not schedule.has_unique_tasks():
                 fitness_list.append(None)
 
-            task_completions = schedule.calculate_task_completion_map()
+            task_completions = schedule.get_task_completion_map()
 
-            makespan = max(task_completions.values())
+            total_time = max(task_completions.values())
 
-            flowtime = 0
+            priority_flowtime = 0
             for key in task_completions:
                 task = self._get_task(key)
                 value = task_completions[key]
-                flowtime += task.priority * value
+                priority_flowtime += task.priority * value
 
-            fitness_value = round(TOTAL_TIME_WEIGHT * makespan + PRIORITIZED_THROUGHPUT_WEIGHT * flowtime)
+            fitness_value = round(TOTAL_TIME_WEIGHT * (self.total_time_bound - total_time) +
+                                  PRIORITY_FLOWTIME_WEIGHT * (self.priority_flowtime_bound - priority_flowtime))
             fitness_list.append(fitness_value)
 
         return fitness_list
@@ -254,10 +284,10 @@ class GeneticTaskScheduler:
         fitness_list = self.fitness(old_population)
 
         fitness_sum = sum([val for val in fitness_list if val])
-        fitness_max = max(fitness_list)
+        #fitness_max = max(fitness_list)
 
-        for i, fitness in enumerate(fitness_list):
-            fitness_list[i] = fitness_max - fitness
+        #for i, fitness in enumerate(fitness_list):
+        #    fitness_list[i] = fitness_max - fitness
 
         for i in range(POPULATION_SIZE):
             survival_value = random.randrange(1, fitness_sum + 1)
@@ -282,7 +312,12 @@ class GeneticTaskScheduler:
 
         random.shuffle(population)
         fitness_list = self.fitness(population)
-        return population[fitness_list.index(max(fitness_list))]
+        best_schedule = population[fitness_list.index(max(fitness_list))]
+
+        for processor in best_schedule.calculate_time_grid(total_time):
+            print processor
+
+        return best_schedule
 
 
 if __name__ == "__main__":
