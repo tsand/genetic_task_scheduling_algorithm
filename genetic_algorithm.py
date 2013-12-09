@@ -49,7 +49,7 @@ class Task:
         return self.min_completion_time
 
     def __repr__(self):
-        return self.name
+        return '<Task %s>' % self.identifier
 
 
 class Schedule:
@@ -125,7 +125,7 @@ class Schedule:
         for i, processor in enumerate(self.processor_schedules):
             for j, task in enumerate(processor):
                 end_time = self.calculate_task_completion(i, j)
-                time_grid[i][(end_time - task.duration):end_time] = [task.identifier] * task.duration
+                time_grid[i][(end_time - task.duration):end_time] = [task] * task.duration
 
         return time_grid
 
@@ -314,10 +314,11 @@ class GeneticTaskScheduler:
         fitness_list = self.fitness(population)
         best_schedule = population[fitness_list.index(max(fitness_list))]
 
+        time_grid = []
         for processor in best_schedule.calculate_time_grid(total_time):
-            print processor
+            time_grid.append(processor)
 
-        return best_schedule
+        return time_grid
 
 
 if __name__ == "__main__":
@@ -325,5 +326,4 @@ if __name__ == "__main__":
     t2 = Task(2, "T2", 3, 2, [t1])
 
     scheduler = GeneticTaskScheduler([t1, t2])
-    scheduler.schedule_tasks(3, 10, total_time=10)
-    print "This is just like the java main method"
+    print scheduler.schedule_tasks(3, 10, total_time=10)

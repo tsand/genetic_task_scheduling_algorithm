@@ -97,7 +97,7 @@
                     </thead>
                     <tr ng-repeat="processor in schedule">
                         <td class="processor-label" ng-bind="$index + 1"></td>
-                        <td ng-repeat="task in processor" style="background-color: {{ task.color }}"></td>
+                        <td ng-repeat="task in processor" ng-style="getColor(task)" ng-bind="task.name"></td>
                     </tr>
                 </table>
             </div>

@@ -2,9 +2,9 @@ app = angular.module('genAlg', []);
 
 function AppController($scope, $http) {
     $scope.constraints = {
-        processors: 4,
+        processors: 3,
         total_time: 10,
-        generations: 100
+        generations: 10
     };
 
     $scope.tasks = [
@@ -90,8 +90,17 @@ function AppController($scope, $http) {
             data: data
         }).success(function (data, status, headers, config) {
                 $scope.schedule = data;
+                console.log($scope.schedule);
                 btn.text(text);
             });
+    };
+
+    $scope.getColor = function (task) {
+        var color = '#ffffff';
+        if (task != null) {
+            color = task.color;
+        }
+        return {'background-color': color}
     }
 }
 

@@ -6,6 +6,8 @@ import genetic_algorithm
 
 app = Flask(__name__)
 
+COLORS = ['#3498db', '#f1c40f', '#c0392b', '#8e44ad', '#e67e22', '#cf4132']
+
 @app.route('/')
 def main():
     return render_template('main.html')
@@ -17,47 +19,42 @@ def schedule():
     raw_tasks = data.get('tasks')
     tasks = []
     for task in raw_tasks:
-        t = genetic_algorithm.Task(task.get('id'), task.get('name'), task.get('length'), task.get('priority'), task.get('depend'))
+        dependencies = task.get('depend')
+        if dependencies:
+            dependencies = [dependencies]
+
+        t = genetic_algorithm.Task(task.get('id'), task.get('name'), task.get('length'), task.get('priority'), dependencies)
         tasks.append(t)
 
+    # Setup dependencies
+    for task in tasks:
+        dependencies = []
+        for depend_id in task.dependencies:
+            for t2 in tasks:
+                if t2.identifier == depend_id:
+                    dependencies.append(t2)
+                    break
+            else:
+                raise Exception('Invalid dependency')
+        task.dependencies = dependencies
+
     constraints = data.get('constraints')
+
     processors = constraints.get('processors')
     generations = constraints.get('generations')
+    total_time = constraints.get('total_time')
 
     gen_alg = genetic_algorithm.GeneticTaskScheduler(tasks)
-    print gen_alg.schedule_tasks(processors, generations)
+    schedule = gen_alg.schedule_tasks(processors, generations, total_time)
 
-
-    # This is where we will take the post and format it in a way that the algorithm will accept
-    # Then it will be pased through the algorithm and return the results of the algorithm
-    # in a way the the frontend can understand
-
-    schedule = []
-
-    # Build Schedule
-    for processor in range(constraints.get('processors')):
-        p_schedule = []
-        for time in range(constraints.get('total_time')):
-            p_schedule.append({})
-        schedule.append(p_schedule)
-
-    # Hard code schedule for testing
-    schedule[0][1] = {'name': 'test', 'color': '#3498db'}
-    schedule[0][2] = {'name': 'test', 'color': '#3498db'}
-    schedule[0][3] = {'name': 'test', 'color': '#3498db'}
-
-    schedule[2][0] = {'name': 'test', 'color': '#f1c40f'}
-    schedule[2][1] = {'name': 'test', 'color': '#f1c40f'}
-    schedule[2][2] = {'name': 'test', 'color': '#f1c40f'}
-    schedule[2][3] = {'name': 'test', 'color': '#f1c40f'}
-
-    schedule[1][0] = {'name': 'test', 'color': '#c0392b'}
-
-    schedule[1][4] = {'name': 'test', 'color': '#8e44ad'}
-    schedule[1][5] = {'name': 'test', 'color': '#8e44ad'}
-    schedule[1][6] = {'name': 'test', 'color': '#8e44ad'}
-
-    sleep(1)
+    # Reformat tasks in a way compatible with UI
+    for i, processor in enumerate(schedule):
+        print processor
+        for j, task in enumerate(processor):
+            if task:
+                schedule[i][j] = {'name': task.name, 'color': COLORS[task.identifier % len(COLORS)]}
+            else:
+                schedule[i][j] = None
 
     return json.dumps(schedule)
 
