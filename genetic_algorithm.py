@@ -246,15 +246,14 @@ class GeneticTaskScheduler:
         self.total_time = total_time
 
         # Calculate upper bounds for fitness measures
-        time_sum = 0
         prioritized_tasks = list(self.tasks)
         prioritized_tasks.sort(None, lambda task: task.priority)
         for task in prioritized_tasks:
-            time_sum += task.duration
-            self.priority_flowtime_bound += time_sum * task.priority
+            self.total_time_bound += task.duration
+            self.priority_flowtime_bound += self.total_time_bound * task.priority
 
-        if not self.total_time_bound:
-            self.total_time_bound = time_sum
+        self.total_time_bound += 1
+        self.priority_flowtime_bound += 1
 
         # Generate first schedule based on min completion time
         self.tasks.sort(None, lambda task: task.get_min_completion_time())
@@ -317,7 +316,6 @@ class GeneticTaskScheduler:
 
             task_completions = schedule.get_task_completion_map()
             total_time = max(task_completions.values())
-
             if total_time > self.total_time:
                 fitness_list.append(0)
                 continue
