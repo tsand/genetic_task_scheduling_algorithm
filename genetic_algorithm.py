@@ -38,9 +38,15 @@ class Task:
         self.min_completion_time = -1
 
     def is_dependency_of(self, other):
+        """
+        Returns true if this task is a dependency (direct or indirect) of other
+        """
         return (self in other.dependencies) or any(self.is_dependency_of(task) for task in other.dependencies)
 
     def get_min_completion_time(self):
+        """
+        Returns the minimum completion time of this task based on the minimum completion times of its dependencies
+        """
         if self.min_completion_time < 0:
             self.min_completion_time = self.duration
             if len(self.dependencies) > 0:
@@ -58,31 +64,67 @@ class Schedule:
             processor_schedules = []
         self.processor_schedules = processor_schedules
         self.task_completion_map = {}
+        self.task_dependency_set_map = {}
 
     def min_processor_schedule_length(self):
         """
-        Returns the number of tasks in the smallest processes
+        Returns the number of tasks in the smallest processor
         """
         return min([len(processor) for processor in self.processor_schedules])
 
     def has_unique_tasks(self):
         """
-        Returns true if the schedule has exactly the number of tasks
+        Returns true if the schedule does not have more than one of the same task
+        """
+        task_set = set()
+        task_sum = 0
+        for processor in self.processor_schedules:
+            task_set.update(processor)
+            task_sum += len(processor)
+        return len(task_set) == task_sum
+
+    def has_direct_dependency_violation(self):
+        """
+        Returns true if in any processor, a task is executed before one of its dependencies
         """
         for processor in self.processor_schedules:
-            if len(set(processor)) < len(processor):
-                return False
-        return True
+            for i in range(len(processor)):
+                for dependency in processor[i].dependencies:
+                    if dependency in processor[i+1:]:
+                        return True
+        return False
 
     def get_task_location(self, task):
         """
-        Finds the index of any given task
+        Returns the processor and task indices of any given task, None if the task is not in this schedule
         """
         for i in range(len(self.processor_schedules)):
             for j in range(len(self.processor_schedules[i])):
                 if self.processor_schedules[i][j].name == task.name:
                     return i, j
         return None
+
+    def get_dependency_set(self, task):
+        """
+        Returns the set of all tasks the given task must be executed after in this schedule
+        """
+        if task in self.task_dependency_set_map:
+            return self.task_dependency_set_map[task]
+
+        dependency_set = set()
+
+        for dependency in task.dependencies:
+            dependency_set.add(dependency)
+            dependency_set.update(self.get_dependency_set(dependency))
+
+        location = self.get_task_location(task)
+        for previous_task in self.processor_schedules[location[0]][0:location[1]]:
+            dependency_set.add(previous_task)
+            dependency_set.update(self.get_dependency_set(previous_task))
+
+        self.task_dependency_set_map[task] = dependency_set
+
+        return dependency_set
 
     def calculate_task_completion(self, processor_index, task_index):
         """
@@ -119,7 +161,7 @@ class Schedule:
 
     def calculate_time_grid(self, total_time):
         """
-        Calculates the grid of time slots and which task's executing during each
+        Calculates the grid of time slots and which task is executing during each
         """
         time_grid = [[0 for x in range(total_time)] for y in range(len(self.processor_schedules))]
         for i, processor in enumerate(self.processor_schedules):
@@ -137,7 +179,7 @@ class Schedule:
 
     def reproduce(self, other):
         """
-        Given another schedule, generates offspring
+        Given another schedule, generates at most two offspring
         """
         max_crossover_index = min(self.min_processor_schedule_length(),
                                   other.min_processor_schedule_length())
@@ -151,29 +193,42 @@ class Schedule:
         for i, processor in enumerate(child2.processor_schedules):
             processor[crossover_index:] = self.processor_schedules[i][crossover_index:]
 
-        return [child1, child2]
+        return [child for child in [child1, child2] if not child.has_direct_dependency_violation()]
 
     def mutate(self):
         """
-        Chooses 1 task and moves it to a random index schedule
+        Chooses 1 task and moves it to a random valid index in the schedule
         """
+        self.task_dependency_set_map = {}
         from_processor = random.choice([processor for processor in self.processor_schedules if len(processor)])
-        to_processor = random.choice(self.processor_schedules)
-
         from_task = random.choice(from_processor)
-        from_processor.remove(from_task)
 
-        min_to_index = -1
-        for i in range(len(to_processor)):
-            if to_processor[i].is_dependency_of(from_task):
-                min_to_index = i
+        processor_range = range(len(self.processor_schedules))
+        random.shuffle(processor_range)
+        for i in processor_range:
+            to_processor = self.processor_schedules[i]
 
-        max_to_index = len(to_processor)
-        for i in reversed(range(len(to_processor))):
-            if from_task.is_dependency_of(to_processor[i]):
-                max_to_index = i
+            min_to_index = 0
+            for j in range(len(to_processor)):
+                for dependency in from_task.dependencies:
+                    if to_processor[j] == dependency or to_processor[j] in self.get_dependency_set(dependency):
+                        min_to_index = j + 1
+                        break
 
-        to_processor.insert(random.randrange(min_to_index + 1, max_to_index + 1), from_task)
+            max_to_index = len(to_processor)
+            for j in reversed(range(len(to_processor))):
+                if from_task in self.get_dependency_set(to_processor[j]):
+                    max_to_index = j
+
+            if min_to_index <= max_to_index:
+                insert_index = random.randrange(min_to_index, max_to_index + 1)
+                if from_processor == to_processor and from_processor.index(from_task) < insert_index:
+                    to_processor.insert(insert_index, from_task)
+                    from_processor.remove(from_task)
+                else:
+                    from_processor.remove(from_task)
+                    to_processor.insert(insert_index, from_task)
+                return
 
 
 class GeneticTaskScheduler:
@@ -193,15 +248,10 @@ class GeneticTaskScheduler:
         # Calculate upper bounds for fitness measures
         time_sum = 0
         prioritized_tasks = list(self.tasks)
-
         prioritized_tasks.sort(None, lambda task: task.priority)
         for task in prioritized_tasks:
-            if time_sum + task.duration > total_time:
-                time_sum = 0
-                self.total_time_bound = total_time
-            else:
-                time_sum += task.duration
-            self.priority_flowtime_bound += time_sum + (task.duration * task.priority)
+            time_sum += task.duration
+            self.priority_flowtime_bound += time_sum * task.priority
 
         if not self.total_time_bound:
             self.total_time_bound = time_sum
@@ -224,6 +274,9 @@ class GeneticTaskScheduler:
         return population
 
     def _get_task(self, identifier):
+        """
+        Retrieves a task by its identifier
+        """
         for task in self.tasks:
             if task.identifier == identifier:
                 return task
@@ -232,6 +285,7 @@ class GeneticTaskScheduler:
     def reproduce(self, population):
         """
         This function, given the population, will randomly select individuals for reproduction
+        and add the children to the population
         """
         fertile_list = []
         for individual in population:
@@ -247,7 +301,7 @@ class GeneticTaskScheduler:
         This function, given the population, will randomly select individuals for mutation
         """
         for individual in population:
-            if random.random() < MUTATION_PROBABILITY:
+            if individual.has_unique_tasks() and random.random() < MUTATION_PROBABILITY:
                 individual.mutate()
 
     def fitness(self, population):
@@ -258,11 +312,15 @@ class GeneticTaskScheduler:
 
         for schedule in population:
             if not schedule.has_unique_tasks():
-                fitness_list.append(None)
+                fitness_list.append(0)
+                continue
 
             task_completions = schedule.get_task_completion_map()
-
             total_time = max(task_completions.values())
+
+            if total_time > self.total_time:
+                fitness_list.append(0)
+                continue
 
             priority_flowtime = 0
             for key in task_completions:
@@ -278,16 +336,11 @@ class GeneticTaskScheduler:
 
     def select(self, old_population):
         """
-        This function determines the individuals that survive to reproduce based on their fitness
+        This function randomly selects the individuals that survive to reproduce based on their fitness
         """
         new_population = []
         fitness_list = self.fitness(old_population)
-
         fitness_sum = sum([val for val in fitness_list if val])
-        #fitness_max = max(fitness_list)
-
-        #for i, fitness in enumerate(fitness_list):
-        #    fitness_list[i] = fitness_max - fitness
 
         for i in range(POPULATION_SIZE):
             survival_value = random.randrange(1, fitness_sum + 1)
@@ -300,8 +353,8 @@ class GeneticTaskScheduler:
 
     def schedule_tasks(self, num_processors, generations, total_time):
         """
-        Given a list of tasks and constraints, this function will run the genetic algorithm
-        to find a good schedule.
+        Given a list of constraints, this function will run the genetic algorithm
+        on the tasks to find a good schedule.
         """
         population = self.initialize(num_processors, POPULATION_SIZE, total_time)
 
@@ -319,11 +372,3 @@ class GeneticTaskScheduler:
             time_grid.append(processor)
 
         return time_grid
-
-
-if __name__ == "__main__":
-    t1 = Task(1, "T1", 2, 8)
-    t2 = Task(2, "T2", 3, 2, [t1])
-
-    scheduler = GeneticTaskScheduler([t1, t2])
-    print scheduler.schedule_tasks(3, 10, total_time=10)
