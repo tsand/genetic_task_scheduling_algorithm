@@ -92,6 +92,9 @@ function AppController($scope, $http) {
                 $scope.schedule = data;
                 console.log($scope.schedule);
                 btn.text(text);
+            }).error(function (data, status, headers, config) {
+                btn.text(text);
+                alert('There was an error processing this schedule.');
             });
     };
 

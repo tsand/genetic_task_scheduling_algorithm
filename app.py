@@ -6,7 +6,7 @@ import genetic_algorithm
 
 app = Flask(__name__)
 
-COLORS = ['#3498db', '#f1c40f', '#c0392b', '#8e44ad', '#e67e22', '#cf4132']
+COLORS = ['#3498db', '#f1c40f', '#c0392b', '#a061ba', '#e67e22', '#1abc9c']
 
 @app.route('/')
 def main():
@@ -49,7 +49,6 @@ def schedule():
 
     # Reformat tasks in a way compatible with UI
     for i, processor in enumerate(schedule):
-        print processor
         for j, task in enumerate(processor):
             if task:
                 schedule[i][j] = {'name': task.name, 'color': COLORS[task.identifier % len(COLORS)]}
