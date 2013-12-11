@@ -199,7 +199,8 @@ class Schedule:
         """
         Chooses 1 task and moves it to a random valid index in the schedule
         """
-        self.task_dependency_set_map = {}
+        self.task_completion_map.clear()
+        self.task_dependency_set_map.clear()
         from_processor = random.choice([processor for processor in self.processor_schedules if len(processor)])
         from_task = random.choice(from_processor)
 
