@@ -80,18 +80,17 @@
 <h5>Algorithm</h5>
 <ul>
     <li>Inputs - The tasks to schedule, constraints on the possible schedules, and algorithm
-        specific inputs such as max generations, timeout, and/or seed.
+        specific inputs such as max generations.
     </li>
     <li>Constraints
         <ul>
             <li>Hard (if genome does not satisfy, it cannot reproduce)
                 <ul>
-                    <li>Procedural - The dependencies each task has on other tasks. If task T1
-                        is dependent on task T2, then this constraint prevents T1 from being
-                        scheduled before T2 is complete.
+                    <li>Procedural - The dependencies each task has on other tasks. If task T2
+                        is dependent on task T1, then this constraint prevents T2 from being
+                        scheduled before T1 is complete.
                     </li>
-                    <li>Temporal - The time constraints put on each task, such as task T1 must
-                        be completed before time 10.
+                    <li>Temporal - A time constraint put on the schedule.
                     </li>
                     <li>Resource - Analogous to the number of processors available to run tasks.
                         If there are X resources/processors available then up to X tasks can be
@@ -99,12 +98,13 @@
                     </li>
                 </ul>
             </li>
-            <li>Soft (genomes that best satisfy these constraints will be more likely to reproduce)
+            <li>Soft (genomes that best satisfy these constraints will be more likely to 
+				survive through generations and reproduce)
                 <ul>
                     <li>Total Time - The time it takes for the longest running processor
                         to finish executing tasks.
                     </li>
-                    <li>Prioritized Throughput - The sum of all the end times of each task,
+                    <li>Prioritized Flow Time - The sum of all the end times of each task,
                         weighted by their priority.
                     </li>
                 </ul>
@@ -118,9 +118,9 @@
         crossover index and swapping the tasks after that index in each resource of one solution
         with the tasks after that index in each resource of the other solution.
     </li>
-    <li>Fitness Function - A function applied to each generating that "sterilizes" solutions that
+    <li>Fitness Function - A function applied the population that "kills" solutions that
         violate any hard constraints and rewards solutions that measure well in terms of the soft
-        constraints with a chance to reproduce.
+        constraints with a higher chance to survive and reproduce.
     </li>
 </ul>
 
