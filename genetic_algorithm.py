@@ -204,7 +204,7 @@ class Schedule:
         from_processor = random.choice([processor for processor in self.processor_schedules if len(processor)])
         from_task = random.choice(from_processor)
 
-        processor_range = range(len(self.processor_schedules))
+        processor_range = list(range(len(self.processor_schedules)))
         random.shuffle(processor_range)
         for i in processor_range:
             to_processor = self.processor_schedules[i]
@@ -248,7 +248,7 @@ class GeneticTaskScheduler:
 
         # Calculate upper bounds for fitness measures
         prioritized_tasks = list(self.tasks)
-        prioritized_tasks.sort(None, lambda task: task.priority)
+        prioritized_tasks.sort(key=lambda task: task.priority)
         for task in prioritized_tasks:
             self.total_time_bound += task.duration
             self.priority_flowtime_bound += self.total_time_bound * task.priority
@@ -257,7 +257,7 @@ class GeneticTaskScheduler:
         self.priority_flowtime_bound += 1
 
         # Generate first schedule based on min completion time
-        self.tasks.sort(None, lambda task: task.get_min_completion_time())
+        self.tasks.sort(key=lambda task: task.get_min_completion_time())
         processor_schedules = [[] for i in range(num_processors)]
 
         for i in range(len(self.tasks)):
